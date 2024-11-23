@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    App(viewModel, mainActivity = this)
+                    App(viewModel, this)
                 }
             }
         }
@@ -81,9 +81,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun App(viewModel: PessoaViewModel, mainActivity: MainActivity) {
-    var nome = ""
-    var idade = ""
-    var pessoa = Pessoa( nome,idade  )
+     var nome by remember { mutableStateOf("") }
+     var telefone by remember { mutableStateOf("") }
+
+    var pessoaList by remember { mutableStateOf(listOf<Pessoa>()) }
+
+     viewModel.getPessoa().observe(mainActivity) {
+        pessoaList = it
+    }
 
     Column(
         Modifier
@@ -110,9 +115,6 @@ fun App(viewModel: PessoaViewModel, mainActivity: MainActivity) {
                 fontSize = 30.sp)
 
         }//FIM DA ROW
-
-
-
         //CAIXA DE TEXTO (NOME)
         Row(
             Modifier
@@ -120,8 +122,6 @@ fun App(viewModel: PessoaViewModel, mainActivity: MainActivity) {
                 .fillMaxWidth(),
                 Arrangement.Center
         ){
-            var nome by remember { mutableStateOf("") }
-
             OutlinedTextField(
                 value = nome,
                 onValueChange = { nome = it },
@@ -129,7 +129,6 @@ fun App(viewModel: PessoaViewModel, mainActivity: MainActivity) {
         }//FIM DA ROW
 
 
-        // LINHA DA CAIXA DE TEXTO (IDADE)
         Row (
             Modifier
                 .padding(20.dp)
@@ -144,12 +143,10 @@ fun App(viewModel: PessoaViewModel, mainActivity: MainActivity) {
                 .fillMaxWidth(),
                 Arrangement.Center
         ) {
-            var idade by remember { mutableStateOf("") }
-
-            OutlinedTextField(
+                OutlinedTextField(
                 value = idade,
                 onValueChange = { idade = it },
-                label = { Text("IDADE:") } )
+                label = { Text("Telefone:") } )
         } //FIM DA ROW
 
 
@@ -161,9 +158,9 @@ fun App(viewModel: PessoaViewModel, mainActivity: MainActivity) {
             ){
                 Button(
                     onClick = {
-                        ViewModel.upsertPessoa(pessoa)
+                        ViewModel.upsertPessoa(Pessoa(nome, telefone))
                         nome = ""
-                        idade = ""
+                        telefone = ""
                     }, // Define a ação a ser executada quando o botão for clicado.
                     modifier = Modifier
                         .padding(18.dp),
@@ -175,8 +172,8 @@ fun App(viewModel: PessoaViewModel, mainActivity: MainActivity) {
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,))
                     }
-                }
-            } //FIM DA ROW
+                }//FIM DA ROW
+    
 
             Row(
                 Modifier
@@ -185,19 +182,31 @@ fun App(viewModel: PessoaViewModel, mainActivity: MainActivity) {
                 //LINHA EM BRANCO
             }
 
-    }
+    }//FIM DA COLUNA
 
+Divider()
 
-@Preview
-@Composable
-fun AppPreview() {
-    MyApplicationTheme{
-        // A surface container using the 'background' color from the theme
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            App()
-        }
-    }
-}
+        LazyColumn {
+            items(pessoaList) { pessoa ->
+                Row(
+                    Modifier.fillMaxWidth(),
+                    Arrangement.SpaceBetween
+                ) {
+                    Column(Modifier.fillMaxWidth(0.5f), Arrangement.Center) {
+                        Text(text = pessoa.nome)
+                    }
+
+                    Column(Modifier.fillMaxWidth(0.3f), Arrangement.Center) {
+                        Text(text = pessoa.idade)
+                    }
+
+                    Button(
+                        onClick = { viewModel.deletePessoa(pessoa) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(245, 10, 119))
+                    ) {
+                        Text(text = "Deletar")
+                    }
+                }
+                Divider()
+            }
+        }//FIM LazyColumn
